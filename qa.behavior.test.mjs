@@ -7,8 +7,8 @@ const flush = async () => { for (let i=0;i<8;i++) await new Promise(resolve => s
 
 async function scenario({origin='https://wallet-qa.aetrs.com', priorAccounts=[], response='reject'}) {
   const nodes = {};
-  for (const id of ['origin','count','status','outcome','request','check','diagnostic']) {
-    nodes[id] = { textContent:'', disabled:id==='request', handlers:{},
+  for (const id of ['origin','count','status','outcome','request','check','diagnostic','revoke']) {
+    nodes[id] = { textContent:'', disabled:id==='request'||id==='revoke', handlers:{},
       addEventListener(kind, fn){ this.handlers[kind]=fn; } };
   }
   let accounts=[...priorAccounts];
@@ -16,6 +16,7 @@ async function scenario({origin='https://wallet-qa.aetrs.com', priorAccounts=[],
   const request = async ({method}) => {
     calls.push(method);
     if (method === 'eth_accounts') return [...accounts];
+    if (method === 'wallet_revokePermissions') {accounts=[];return null;}
     if (method === 'eth_requestAccounts') {
       if (response === 'reject') throw Object.assign(new Error('User rejected the request'),{code:4001});
       // Physical MetaMask 8.18.0 anomaly: a dismissed prompt was followed
@@ -66,10 +67,18 @@ assert.equal(existing.nodes.count.textContent,'1');
 assert.equal(existing.nodes.request.disabled,true);
 assert.match(existing.nodes.status.textContent,/already has account access/);
 assert.deepEqual(existing.calls,['eth_accounts'],'Existing permission must not trigger another request');
+assert.equal(existing.nodes.revoke.disabled,false,'Revoke should be enabled only for authorized QA origin');
+await existing.nodes.revoke.handlers.click();
+await existing.flush();
+assert.equal(existing.nodes.count.textContent,'0');
+assert.equal(existing.nodes.revoke.disabled,true);
+assert.equal(existing.nodes.request.disabled,false);
+assert.deepEqual(existing.calls,['eth_accounts','wallet_revokePermissions','eth_accounts']);
 
 const wrongOrigin=await scenario({origin:'https://untrusted.example'});
 assert.equal(wrongOrigin.nodes.request.disabled,true);
 assert.equal(wrongOrigin.nodes.check.disabled,true);
+assert.equal(wrongOrigin.nodes.revoke.disabled,true);
 assert.deepEqual(wrongOrigin.calls,[]);
 assert.match(wrongOrigin.nodes.status.textContent,/Wrong site origin/);
 
@@ -84,5 +93,8 @@ await granted.nodes.request.handlers.click();
 await granted.flush();
 assert.match(granted.nodes.outcome.textContent,/NOT PASSED/);
 assert.equal(granted.nodes.count.textContent,'1');
+await granted.nodes.revoke.handlers.click();
+await granted.flush();
+assert.equal(granted.nodes.count.textContent,'0');
 
 console.log('PASS: declined 4001 stays at zero accounts; existing authorization, wrong origin a 4001 with unexpected authorization fails closed, and non-rejection errors fail closed. No real wallet used.');
