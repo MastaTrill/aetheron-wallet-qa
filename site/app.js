@@ -100,6 +100,20 @@
     }
   });
 
+  const revokeUnexpectedGrant = async (phase) => {
+    record('unexpected grant mitigation', phase);
+    try {
+      await provider().request({ method: 'wallet_revokePermissions', params: [{eth_accounts:{}}] });
+      record('mitigation revoke RPC', 'returned');
+      const count = await queryAccounts();
+      record('mitigation readback count', count);
+      return count === 0;
+    } catch (error) {
+      record('mitigation error code', errorCode(error));
+      return false;
+    }
+  };
+
   requestButton.addEventListener('click', async event => {
     clickCount += 1;
     record('request click', '#' + clickCount + ' trusted=' + Boolean(event?.isTrusted) + ' pointer=' + lastPointerKind);
@@ -127,7 +141,11 @@
         const count = await queryAccounts();
         record('immediate post-request count', count);
         if (count !== 0) {
-          outcome.textContent = 'NOT PASSED: One or more accounts are authorized for this origin.';
+          outcome.textContent = 'NOT PASSED: MetaMask authorized an account after the connection request.';
+          const revoked = await revokeUnexpectedGrant('immediate post-request');
+          outcome.textContent = revoked
+            ? 'NOT PASSED: Account access was unexpectedly granted, then automatically revoked for this QA site.'
+            : 'NOT PASSED: Account authorized and automatic QA-only revocation was not confirmed. Disconnect this QA site manually.';
         } else if (outcome.textContent.startsWith('PASS:')) {
           outcome.textContent += ' Follow-up read confirms zero authorized accounts.';
         }
@@ -141,7 +159,10 @@
         const delayed = await queryAccounts();
         record('1200ms post-request count', delayed);
         if (delayed !== 0) {
-          outcome.textContent = 'NOT PASSED: One or more accounts are authorized for this origin.';
+          const revoked = await revokeUnexpectedGrant('1200ms delayed read');
+          outcome.textContent = revoked
+            ? 'NOT PASSED: Delayed account access was automatically revoked for this QA site.'
+            : 'NOT PASSED: Delayed QA-site account access remains. Use Disconnect this QA site.';
         }
       } catch (error) {
         record('delayed read error code', errorCode(error));
