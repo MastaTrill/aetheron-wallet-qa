@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Aetheron QA · First-time wallet rejection</title>
+  <link href="./style.css?v=1" rel="stylesheet">
+  <script src="./app.js?v=1" defer></script>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">AETHERON · QA ONLY</p>
+    <h1>First-time MetaMask connection rejection test</h1>
+    <p class="muted">This is an isolated test on <strong>wallet-qa.aetrs.com</strong>, not the public Aetheron website. It requests account access only when you tap the button. It contains no signing, transaction, transfer, or token approval functions.</p>
+    <section class="panel">
+      <h2>Permission check</h2>
+      <p>Site origin: <output id="origin"></output></p>
+      <p>Accounts currently authorized: <output id="count">Checking…</output></p>
+      <p id="status" role="status" aria-live="polite">Checking this QA origin.</p>
+      <div class="controls">
+        <button type="button" id="check">Check existing access (read-only)</button>
+        <button type="button" id="request" disabled>Request account access — choose Cancel in MetaMask</button>
+      </div>
+      <p id="outcome" class="outcome" role="status" aria-live="polite">No test performed.</p>
+    </section>
+    <section class="notice">
+      <h2>Safety rules</h2>
+      <p><strong>Press Cancel or Reject in MetaMask.</strong> Don't approve the account connection. Don't sign messages, approve spending, or submit transactions. If MetaMask warns that this site may be deceptive, leave it and do not bypass the warning.</p>
+      <p>The existing authorized preview at <code>mastatrill.github.io</code> is a different origin and must remain untouched.</p>
+    </section>
+    <p class="small">No cookies, analytics, server calls, wallet-address logging, account storage, or automatic permission requests. Test output stays in this browser session.</p>
+  </main>
+</body>
+</html>
