@@ -24,6 +24,8 @@ jobs:
           node-version: '22'
       - name: Reject unsafe wallet API methods and insecure configuration
         run: node qa.test.mjs
+      - name: Assert first-time rejection behavior against an isolated stub provider
+        run: node qa.behavior.test.mjs
       - name: Check strict output filenames
         run: |
           set -euo pipefail
