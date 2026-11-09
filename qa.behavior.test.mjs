@@ -18,6 +18,12 @@ async function scenario({origin='https://wallet-qa.aetrs.com', priorAccounts=[],
     if (method === 'eth_accounts') return [...accounts];
     if (method === 'eth_requestAccounts') {
       if (response === 'reject') throw Object.assign(new Error('User rejected the request'),{code:4001});
+      // Physical MetaMask 8.18.0 anomaly: a dismissed prompt was followed
+      // by an authorized account. Even a 4001 alone cannot mark this as PASS.
+      if (response === 'reject-but-authorized') {
+        accounts=['0x0000000000000000000000000000000000000001'];
+        throw Object.assign(new Error('User rejected the request'),{code:4001});
+      }
       if (response === 'other-error') throw Object.assign(new Error('Request failed'),{code:-32000});
       accounts=['0x0000000000000000000000000000000000000001'];
       return [...accounts];
@@ -41,6 +47,15 @@ assert.match(denied.nodes.outcome.textContent,/PASS: MetaMask rejected account a
 assert.match(denied.nodes.outcome.textContent,/zero authorized accounts/);
 assert.deepEqual(denied.calls,['eth_accounts','eth_requestAccounts','eth_accounts']);
 assert.equal(denied.nodes.request.disabled,false,'Rejection preserves a usable retry button');
+
+const anomalous=await scenario({response:'reject-but-authorized'});
+await anomalous.nodes.request.handlers.click();
+await anomalous.flush();
+assert.equal(anomalous.nodes.count.textContent,'1');
+assert.equal(anomalous.nodes.request.disabled,true);
+assert.match(anomalous.nodes.outcome.textContent,/^NOT PASSED:/,
+  'Even with error 4001, a post-dismiss authorized account must fail closed');
+assert.deepEqual(anomalous.calls,['eth_accounts','eth_requestAccounts','eth_accounts']);
 
 const existing=await scenario({priorAccounts:['0x0000000000000000000000000000000000000001']});
 assert.equal(existing.nodes.count.textContent,'1');
@@ -66,4 +81,4 @@ await granted.flush();
 assert.match(granted.nodes.outcome.textContent,/NOT PASSED/);
 assert.equal(granted.nodes.count.textContent,'1');
 
-console.log('PASS: declined 4001 stays at zero accounts; existing authorization, wrong origin and non-rejection errors fail closed. No real wallet used.');
+console.log('PASS: declined 4001 stays at zero accounts; existing authorization, wrong origin a 4001 with unexpected authorization fails closed, and non-rejection errors fail closed. No real wallet used.');
