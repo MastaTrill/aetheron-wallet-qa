@@ -7,7 +7,7 @@ const flush = async () => { for (let i=0;i<8;i++) await new Promise(resolve => s
 
 async function scenario({origin='https://wallet-qa.aetrs.com', priorAccounts=[], response='reject'}) {
   const nodes = {};
-  for (const id of ['origin','count','status','outcome','request','check']) {
+  for (const id of ['origin','count','status','outcome','request','check','diagnostic']) {
     nodes[id] = { textContent:'', disabled:id==='request', handlers:{},
       addEventListener(kind, fn){ this.handlers[kind]=fn; } };
   }
@@ -45,7 +45,9 @@ await denied.nodes.request.handlers.click();
 await denied.flush();
 assert.match(denied.nodes.outcome.textContent,/PASS: MetaMask rejected account access \(4001\)/);
 assert.match(denied.nodes.outcome.textContent,/zero authorized accounts/);
-assert.deepEqual(denied.calls,['eth_accounts','eth_requestAccounts','eth_accounts']);
+assert.deepEqual(denied.calls,['eth_accounts','eth_requestAccounts','eth_accounts','eth_accounts']);
+assert.match(denied.nodes.diagnostic.textContent,/eth_requestAccounts promise: rejected code=4001/);
+assert.match(denied.nodes.diagnostic.textContent,/1200ms post-request count: 0/);
 assert.equal(denied.nodes.request.disabled,false,'Rejection preserves a usable retry button');
 
 const anomalous=await scenario({response:'reject-but-authorized'});
@@ -55,7 +57,9 @@ assert.equal(anomalous.nodes.count.textContent,'1');
 assert.equal(anomalous.nodes.request.disabled,true);
 assert.match(anomalous.nodes.outcome.textContent,/^NOT PASSED:/,
   'Even with error 4001, a post-dismiss authorized account must fail closed');
-assert.deepEqual(anomalous.calls,['eth_accounts','eth_requestAccounts','eth_accounts']);
+assert.deepEqual(anomalous.calls,['eth_accounts','eth_requestAccounts','eth_accounts','eth_accounts']);
+assert.match(anomalous.nodes.diagnostic.textContent,/eth_requestAccounts promise: rejected code=4001/);
+assert.match(anomalous.nodes.diagnostic.textContent,/immediate post-request count: 1/);
 
 const existing=await scenario({priorAccounts:['0x0000000000000000000000000000000000000001']});
 assert.equal(existing.nodes.count.textContent,'1');
