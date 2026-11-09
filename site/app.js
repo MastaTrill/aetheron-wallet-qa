@@ -13,10 +13,17 @@
   const diagnostic = document.getElementById('diagnostic');
   const events = [];
   let observedProvider = null;
+  let requestAttempted = false;
+  let lastPointerKind = 'unobserved';
+  let clickCount = 0;
+  requestButton.addEventListener('pointerdown', event => {
+    lastPointerKind = ['touch','mouse','pen'].includes(event.pointerType) ? event.pointerType : 'other';
+    record('request pointer', lastPointerKind + ' trusted=' + Boolean(event.isTrusted));
+  });
   const record = (name, value) => {
     // Counts, numeric error codes and event names only. Never addresses.
     events.push(name + ': ' + String(value));
-    if (events.length > 18) events.shift();
+    if (events.length > 36) events.shift();
     diagnostic.textContent = events.join('\n');
   };
   const errorCode = error => {
@@ -47,7 +54,7 @@
     if (!Array.isArray(list)) throw new Error('Unexpected account response');
     authorizedCount.textContent = String(list.length);
     record('eth_accounts count', list.length);
-    requestButton.disabled = !validOrigin || list.length !== 0;
+    requestButton.disabled = !validOrigin || list.length !== 0 || requestAttempted;
     revokeButton.disabled = !validOrigin || list.length === 0;
     status.textContent = list.length === 0
       ? 'No account access is currently authorized for this origin.'
@@ -74,6 +81,8 @@
   });
 
   revokeButton.addEventListener('click', async () => {
+    requestAttempted = true;
+    requestButton.disabled = true;
     revokeButton.disabled = true;
     outcome.textContent = 'Revoking account access for this QA hostname only.';
     try {
@@ -91,7 +100,14 @@
     }
   });
 
-  requestButton.addEventListener('click', async () => {
+  requestButton.addEventListener('click', async event => {
+    clickCount += 1;
+    record('request click', '#' + clickCount + ' trusted=' + Boolean(event?.isTrusted) + ' pointer=' + lastPointerKind);
+    if (requestAttempted) {
+      record('duplicate request blocked', clickCount);
+      return;
+    }
+    requestAttempted = true; // One permission request per page load, no accidental second click.
     requestButton.disabled = true;
     record('before request count', authorizedCount.textContent);
     outcome.textContent = 'Waiting for MetaMask. Choose Cancel / Reject to test refusal.';
