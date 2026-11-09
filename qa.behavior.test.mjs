@@ -55,11 +55,13 @@ assert.match(denied.nodes.diagnostic.textContent,/request click: #1 trusted=fals
 const anomalous=await scenario({response:'reject-but-authorized'});
 await anomalous.nodes.request.handlers.click();
 await anomalous.flush();
-assert.equal(anomalous.nodes.count.textContent,'1');
+assert.equal(anomalous.nodes.count.textContent,'0', 'Unexpectedly granted QA account must be revoked automatically');
 assert.equal(anomalous.nodes.request.disabled,true);
 assert.match(anomalous.nodes.outcome.textContent,/^NOT PASSED:/,
   'Even with error 4001, a post-dismiss authorized account must fail closed');
-assert.deepEqual(anomalous.calls,['eth_accounts','eth_requestAccounts','eth_accounts','eth_accounts']);
+assert.deepEqual(anomalous.calls,['eth_accounts','eth_requestAccounts','eth_accounts','wallet_revokePermissions','eth_accounts','eth_accounts']);
+assert.match(anomalous.nodes.diagnostic.textContent,/unexpected grant mitigation: immediate post-request/);
+assert.match(anomalous.nodes.outcome.textContent,/automatically revoked/);
 assert.match(anomalous.nodes.diagnostic.textContent,/eth_requestAccounts promise: rejected code=4001/);
 assert.match(anomalous.nodes.diagnostic.textContent,/immediate post-request count: 1/);
 
@@ -94,9 +96,8 @@ await granted.nodes.request.handlers.click();
 await granted.flush();
 assert.match(granted.nodes.outcome.textContent,/NOT PASSED/);
 assert.equal(granted.nodes.request.disabled,true);
-assert.equal(granted.nodes.count.textContent,'1');
-await granted.nodes.revoke.handlers.click();
-await granted.flush();
-assert.equal(granted.nodes.count.textContent,'0');
+assert.equal(granted.nodes.count.textContent,'0', 'Unexpected approval must not leave QA account authorized');
+assert.ok(granted.calls.includes('wallet_revokePermissions'));
+assert.match(granted.nodes.outcome.textContent,/automatically revoked/);
 
 console.log('PASS: declined 4001 stays at zero accounts; existing authorization, wrong origin a 4001 with unexpected authorization fails closed, and non-rejection errors fail closed. No real wallet used.');
