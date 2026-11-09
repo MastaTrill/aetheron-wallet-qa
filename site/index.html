@@ -8,7 +8,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Aetheron QA · First-time wallet rejection</title>
   <link href="./style.css?v=1" rel="stylesheet">
-  <script src="./app.js?v=1" defer></script>
+  <script src="./app.js?v=2" defer></script>
 </head>
 <body>
   <main>
@@ -25,6 +25,11 @@
         <button type="button" id="request" disabled>Request account access — choose Cancel in MetaMask</button>
       </div>
       <p id="outcome" class="outcome" role="status" aria-live="polite">No test performed.</p>
+      <details open class="diagnostics">
+        <summary>Privacy-safe provider event trace</summary>
+        <pre id="diagnostic" aria-live="polite">No provider events yet.</pre>
+        <p class="small">Shows only event names, numeric error codes, and authorized account counts; never wallet addresses. Nothing is uploaded or saved.</p>
+      </details>
     </section>
     <section class="notice">
       <h2>Safety rules</h2>
