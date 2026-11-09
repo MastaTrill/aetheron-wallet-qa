@@ -8,7 +8,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Aetheron QA · First-time wallet rejection</title>
   <link href="./style.css?v=1" rel="stylesheet">
-  <script src="./app.js?v=2" defer></script>
+  <script src="./app.js?v=3" defer></script>
 </head>
 <body>
   <main>
@@ -23,6 +23,7 @@
       <div class="controls">
         <button type="button" id="check">Check existing access (read-only)</button>
         <button type="button" id="request" disabled>Request account access — choose Cancel in MetaMask</button>
+        <button type="button" id="revoke" disabled>Disconnect this QA site's account access only</button>
       </div>
       <p id="outcome" class="outcome" role="status" aria-live="polite">No test performed.</p>
       <details open class="diagnostics">
@@ -34,7 +35,7 @@
     <section class="notice">
       <h2>Safety rules</h2>
       <p><strong>Press Cancel or Reject in MetaMask.</strong> Don't approve the account connection. Don't sign messages, approve spending, or submit transactions. If MetaMask warns that this site may be deceptive, leave it and do not bypass the warning.</p>
-      <p>The existing authorized preview at <code>mastatrill.github.io</code> is a different origin and must remain untouched.</p>
+      <p>The Disconnect button, when supported by MetaMask, revokes <em>only this page origin's</em> account permission. The existing authorized preview at <code>mastatrill.github.io</code> is a different origin and must remain untouched.</p>
     </section>
     <p class="small">No cookies, analytics, server calls, wallet-address logging, account storage, or automatic permission requests. Test output stays in this browser session.</p>
   </main>
