@@ -1,0 +1,41 @@
+name: Deploy standalone Aetheron account-rejection QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: aetheron-wallet-qa-pages
+  cancel-in-progress: true
+jobs:
+  isolated-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reject unsafe wallet API methods and insecure configuration
+        run: node qa.test.mjs
+      - name: Check strict output filenames
+        run: |
+          set -euo pipefail
+          test -s site/index.html
+          test -s site/app.js
+          test -s site/style.css
+          test -s site/robots.txt
+          test -z "$(find site -type f ! -name 'index.html' ! -name 'app.js' ! -name 'style.css' ! -name 'robots.txt')"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Publish isolated QA page only
+        id: deployment
+        uses: actions/deploy-pages@v4
