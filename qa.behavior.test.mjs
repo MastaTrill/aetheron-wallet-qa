@@ -49,7 +49,8 @@ assert.match(denied.nodes.outcome.textContent,/zero authorized accounts/);
 assert.deepEqual(denied.calls,['eth_accounts','eth_requestAccounts','eth_accounts','eth_accounts']);
 assert.match(denied.nodes.diagnostic.textContent,/eth_requestAccounts promise: rejected code=4001/);
 assert.match(denied.nodes.diagnostic.textContent,/1200ms post-request count: 0/);
-assert.equal(denied.nodes.request.disabled,false,'Rejection preserves a usable retry button');
+assert.equal(denied.nodes.request.disabled,true,'Only one account request is permitted per QA page load');
+assert.match(denied.nodes.diagnostic.textContent,/request click: #1 trusted=false pointer=unobserved/);
 
 const anomalous=await scenario({response:'reject-but-authorized'});
 await anomalous.nodes.request.handlers.click();
@@ -72,7 +73,7 @@ await existing.nodes.revoke.handlers.click();
 await existing.flush();
 assert.equal(existing.nodes.count.textContent,'0');
 assert.equal(existing.nodes.revoke.disabled,true);
-assert.equal(existing.nodes.request.disabled,false);
+assert.equal(existing.nodes.request.disabled,true,'After revoke, reload before another account request');
 assert.deepEqual(existing.calls,['eth_accounts','wallet_revokePermissions','eth_accounts']);
 
 const wrongOrigin=await scenario({origin:'https://untrusted.example'});
@@ -92,6 +93,7 @@ const granted=await scenario({response:'approve'});
 await granted.nodes.request.handlers.click();
 await granted.flush();
 assert.match(granted.nodes.outcome.textContent,/NOT PASSED/);
+assert.equal(granted.nodes.request.disabled,true);
 assert.equal(granted.nodes.count.textContent,'1');
 await granted.nodes.revoke.handlers.click();
 await granted.flush();
