@@ -9,6 +9,7 @@
   const outcome = document.getElementById('outcome');
   const requestButton = document.getElementById('request');
   const checkButton = document.getElementById('check');
+  const revokeButton = document.getElementById('revoke');
   const diagnostic = document.getElementById('diagnostic');
   const events = [];
   let observedProvider = null;
@@ -47,6 +48,7 @@
     authorizedCount.textContent = String(list.length);
     record('eth_accounts count', list.length);
     requestButton.disabled = !validOrigin || list.length !== 0;
+    revokeButton.disabled = !validOrigin || list.length === 0;
     status.textContent = list.length === 0
       ? 'No account access is currently authorized for this origin.'
       : 'This origin already has account access. Do not claim a first-time rejection test.';
@@ -57,6 +59,7 @@
     authorizedCount.textContent = 'Not available';
     requestButton.disabled = true;
     checkButton.disabled = true;
+    revokeButton.disabled = true;
     status.textContent = 'Wrong site origin. This QA control only runs on wallet-qa.aetrs.com.';
     return;
   }
@@ -67,6 +70,24 @@
       outcome.textContent = 'Existing permission checked. No new access requested.';
     } catch (error) {
       status.textContent = String(error.message || error);
+    }
+  });
+
+  revokeButton.addEventListener('click', async () => {
+    revokeButton.disabled = true;
+    outcome.textContent = 'Revoking account access for this QA hostname only.';
+    try {
+      await provider().request({ method: 'wallet_revokePermissions', params: [{eth_accounts:{}}] });
+      record('wallet_revokePermissions', 'requested for eth_accounts');
+      const count = await queryAccounts();
+      if (count !== 0) {
+        outcome.textContent = 'NOT VERIFIED: QA hostname still has account access.';
+      } else {
+        outcome.textContent = 'QA site disconnected. Zero authorized accounts.';
+      }
+    } catch (error) {
+      record('revoke RPC error code', errorCode(error));
+      outcome.textContent = 'QA revocation failed or is unsupported. Use MetaMask site permissions to disconnect this origin.';
     }
   });
 
